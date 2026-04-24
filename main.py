@@ -13,20 +13,24 @@ SPREADSHEET_ID = os.environ.get('SPREADSHEET_ID')
 GOOGLE_CREDENTIALS = os.environ.get('GOOGLE_CREDENTIALS')
 
 def get_sheet():
-    creds_dict = json.loads(GOOGLE_CREDENTIALS)
+    creds_json = os.environ.get('GOOGLE_CREDENTIALS')
+    if not creds_json:
+        raise ValueError("GOOGLE_CREDENTIALS is not set")
+    creds_dict = json.loads(creds_json)
     scopes = ['https://www.googleapis.com/auth/spreadsheets']
     creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
     client = gspread.authorize(creds)
-    sheet = client.open_by_key(SPREADSHEET_ID).worksheet('Messages')
+    sheet = client.open_by_key(os.environ.get('SPREADSHEET_ID')).worksheet('Messages')
     return sheet
 
 def get_display_name(source_type, group_id, user_id):
     try:
+        token = os.environ.get('CHANNEL_ACCESS_TOKEN')
         if source_type == 'group':
             url = f'https://api.line.me/v2/bot/group/{group_id}/member/{user_id}'
         else:
             url = f'https://api.line.me/v2/bot/profile/{user_id}'
-        headers = {'Authorization': f'Bearer {CHANNEL_ACCESS_TOKEN}'}
+        headers = {'Authorization': f'Bearer {token}'}
         res = requests.get(url, headers=headers)
         return res.json().get('displayName', '')
     except:
